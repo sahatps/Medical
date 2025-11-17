@@ -455,11 +455,45 @@
                 backendAvailable = false;
                 statusDiv.innerHTML = `
                     <p><strong>❌ Backend Not Running</strong></p>
-                    <p>Please start the backend server:</p>
-                    <code style="background: #333; color: #0f0; padding: 5px; border-radius: 3px; display: block; margin: 5px 0;">
-                        python local_backend.py
-                    </code>
-                    <p style="font-size: 0.9em; margin-top: 5px;">Or switch back to MediaPipe (Browser) mode.</p>
+                    <p>To use YOLO-NAS, you need to run the Python backend on your computer:</p>
+
+                    <div style="margin: 15px 0; padding: 15px; background: #fff; border-radius: 5px; border: 1px solid #ddd;">
+                        <p style="margin-bottom: 10px;"><strong>📥 Download Required Files:</strong></p>
+                        <div style="margin-bottom: 10px;">
+                            <button class="btn" onclick="downloadBackendFile('app_launcher')" style="margin: 3px; font-size: 0.9em;">
+                                📄 app_launcher.py
+                            </button>
+                            <button class="btn" onclick="downloadBackendFile('requirements')" style="margin: 3px; font-size: 0.9em;">
+                                📄 requirements.txt
+                            </button>
+                            <button class="btn" onclick="downloadBackendFile('start_bat')" style="margin: 3px; font-size: 0.9em;">
+                                📄 start_app.bat
+                            </button>
+                            <button class="btn" onclick="downloadBackendFile('start_sh')" style="margin: 3px; font-size: 0.9em;">
+                                📄 start_app.sh
+                            </button>
+                        </div>
+                        <div style="background: #fffbea; padding: 8px; border-radius: 5px; margin: 10px 0; font-size: 0.9em;">
+                            <strong>⚠️ Note:</strong> You also need <code>local_backend.py</code> (400+ lines)
+                            <br>
+                            <button class="btn" onclick="promptBackendDownload()" style="margin-top: 8px; font-size: 0.85em;">
+                                📄 Download local_backend.py
+                            </button>
+                        </div>
+                        <button class="btn" onclick="downloadAllBackendFiles()" style="width: 100%; margin-top: 10px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                            📦 Download All Launcher Files
+                        </button>
+                    </div>
+
+                    <div style="background: #e7f3ff; padding: 10px; border-radius: 5px; margin: 10px 0;">
+                        <p style="margin: 5px 0;"><strong>🚀 Quick Start (After Download):</strong></p>
+                        <p style="margin: 5px 0;">Windows: Double-click <code>start_app.bat</code></p>
+                        <p style="margin: 5px 0;">Mac/Linux: Run <code>./start_app.sh</code> or <code>python3 app_launcher.py</code></p>
+                    </div>
+
+                    <p style="font-size: 0.9em; margin-top: 10px; color: #666;">
+                        💡 Or switch back to MediaPipe (Browser) mode for zero setup.
+                    </p>
                 `;
                 statusDiv.style.background = '#f8d7da';
                 statusDiv.style.borderLeft = '4px solid #dc3545';
@@ -553,6 +587,410 @@
         function getModelSize(modelName) {
             const sizes = { 'N': '50MB', 'S': '70MB', 'M': '120MB', 'L': '200MB' };
             return sizes[modelName] || '~100MB';
+        }
+
+        // Backend file templates
+        const backendFiles = {
+            app_launcher: {
+                filename: 'app_launcher.py',
+                content: `#!/usr/bin/env python3
+"""
+Tennis Pose Estimation - Application Launcher
+Automatically starts the Flask backend and opens the web interface
+"""
+
+import os
+import sys
+import time
+import threading
+import webbrowser
+from pathlib import Path
+
+def print_banner():
+    """Print application banner"""
+    print("=" * 70)
+    print("🎾 Tennis Pose Estimation - Application Launcher")
+    print("=" * 70)
+    print()
+
+def check_dependencies():
+    """Check if required dependencies are installed"""
+    print("📦 Checking dependencies...")
+
+    required_packages = [
+        'flask',
+        'flask_cors',
+        'cv2',
+        'torch',
+        'super_gradients'
+    ]
+
+    missing_packages = []
+
+    for package in required_packages:
+        try:
+            if package == 'cv2':
+                import cv2
+            elif package == 'flask_cors':
+                import flask_cors
+            elif package == 'super_gradients':
+                import super_gradients
+            else:
+                __import__(package)
+            print(f"  ✅ {package}")
+        except ImportError:
+            print(f"  ❌ {package} - NOT INSTALLED")
+            missing_packages.append(package)
+
+    if missing_packages:
+        print("\\n⚠️  Missing dependencies detected!")
+        print("\\nTo install missing packages, run:")
+        print(f"  pip install -r requirements-local.txt")
+        print("\\nOr install manually:")
+        for pkg in missing_packages:
+            if pkg == 'cv2':
+                print(f"  pip install opencv-python-headless")
+            elif pkg == 'flask_cors':
+                print(f"  pip install flask-cors")
+            else:
+                print(f"  pip install {pkg}")
+        print()
+
+        response = input("Continue anyway? (y/N): ").strip().lower()
+        if response != 'y':
+            print("Exiting...")
+            sys.exit(1)
+
+    print("✅ All dependencies are installed!\\n")
+
+def start_backend():
+    """Start Flask backend server in a separate thread"""
+    print("🚀 Starting Flask backend server...")
+
+    try:
+        # Import Flask app
+        from local_backend import app
+
+        # Run Flask app (suppress Flask's default output)
+        import logging
+        log = logging.getLogger('werkzeug')
+        log.setLevel(logging.ERROR)
+
+        app.run(debug=False, host='0.0.0.0', port=5000, use_reloader=False)
+
+    except Exception as e:
+        print(f"❌ Error starting backend: {e}")
+        sys.exit(1)
+
+def wait_for_backend(url='http://localhost:5000', timeout=30):
+    """Wait for backend to be ready"""
+    import urllib.request
+    import urllib.error
+
+    print("⏳ Waiting for backend to start", end='', flush=True)
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
+        try:
+            urllib.request.urlopen(f"{url}/api/health", timeout=1)
+            print(" ✅")
+            return True
+        except (urllib.error.URLError, ConnectionRefusedError):
+            print(".", end='', flush=True)
+            time.sleep(0.5)
+
+    print(" ❌")
+    print(f"⚠️  Backend failed to start within {timeout} seconds")
+    return False
+
+def open_browser():
+    """Open the web interface in default browser"""
+    # Find the HTML file
+    html_path = Path(__file__).parent / 'public' / 'index.html'
+
+    if not html_path.exists():
+        print(f"❌ Error: {html_path} not found!")
+        return False
+
+    # Convert to absolute file URL
+    file_url = f"file://{html_path.absolute()}"
+
+    print(f"🌐 Opening web interface...")
+    print(f"   URL: {file_url}")
+
+    try:
+        webbrowser.open(file_url)
+        print("✅ Web interface opened in your default browser!")
+        return True
+    except Exception as e:
+        print(f"❌ Error opening browser: {e}")
+        print(f"\\nPlease manually open: {html_path}")
+        return False
+
+def main():
+    """Main application launcher"""
+    print_banner()
+
+    # Check dependencies
+    check_dependencies()
+
+    # Start Flask backend in a separate thread
+    backend_thread = threading.Thread(target=start_backend, daemon=True)
+    backend_thread.start()
+
+    # Wait for backend to be ready
+    if not wait_for_backend():
+        print("❌ Failed to start backend server")
+        sys.exit(1)
+
+    print("✅ Backend server is running at http://localhost:5000")
+    print()
+
+    # Open browser
+    open_browser()
+
+    print()
+    print("=" * 70)
+    print("📝 Instructions:")
+    print("   1. The web interface should open in your browser")
+    print("   2. Select 'YOLO-NAS (Backend)' from the Pose Engine dropdown")
+    print("   3. Choose your model and upload a video")
+    print("   4. Click 'Start Processing' to begin")
+    print()
+    print("💡 Both engines are now available:")
+    print("   • MediaPipe (Browser) - Works in browser, no backend needed")
+    print("   • YOLO-NAS (Backend) - Uses the Flask backend running now")
+    print()
+    print("⚠️  To stop the application: Press Ctrl+C")
+    print("=" * 70)
+    print()
+
+    try:
+        # Keep the main thread alive
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\\n\\n🛑 Shutting down...")
+        print("✅ Application stopped successfully!")
+        sys.exit(0)
+
+if __name__ == '__main__':
+    main()
+`
+            },
+            requirements: {
+                filename: 'requirements-local.txt',
+                content: `Flask==3.0.0
+flask-cors==4.0.0
+opencv-python-headless==4.8.1.78
+numpy==1.24.3
+super-gradients==3.5.0
+torch==2.1.0
+torchvision==0.16.0
+Werkzeug==3.0.1
+Pillow==10.1.0
+`
+            },
+            start_bat: {
+                filename: 'start_app.bat',
+                content: `@echo off
+REM Tennis Pose Estimation - Windows Launcher
+REM Double-click this file to start the application
+
+echo.
+echo =========================================
+echo Tennis Pose Estimation - Starting...
+echo =========================================
+echo.
+
+REM Check if Python is installed
+python --version >nul 2>&1
+if errorlevel 1 (
+    echo ERROR: Python is not installed or not in PATH
+    echo.
+    echo Please install Python from: https://www.python.org/downloads/
+    echo.
+    pause
+    exit /b 1
+)
+
+REM Run the launcher
+python app_launcher.py
+
+pause
+`
+            },
+            start_sh: {
+                filename: 'start_app.sh',
+                content: `#!/bin/bash
+# Tennis Pose Estimation - Mac/Linux Launcher
+# Run this file to start the application
+
+echo ""
+echo "========================================="
+echo "Tennis Pose Estimation - Starting..."
+echo "========================================="
+echo ""
+
+# Check if Python is installed
+if ! command -v python3 &> /dev/null
+then
+    echo "ERROR: Python 3 is not installed"
+    echo ""
+    echo "Please install Python 3 from: https://www.python.org/downloads/"
+    echo ""
+    exit 1
+fi
+
+# Run the launcher
+python3 app_launcher.py
+`
+            },
+            backend: {
+                filename: 'local_backend.py',
+                content: null  // Will be loaded via fetch or shown as external link
+            }
+        };
+
+        // Download a single backend file
+        function downloadBackendFile(fileType) {
+            const file = backendFiles[fileType];
+            if (!file) {
+                showAlert('File not found: ' + fileType, 'error');
+                return;
+            }
+
+            const blob = new Blob([file.content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showAlert(\`Downloaded: \${file.filename}\`, 'success');
+        }
+
+        // Download all backend files
+        function downloadAllBackendFiles() {
+            let downloadCount = 0;
+            const filesToDownload = ['app_launcher', 'requirements', 'start_bat', 'start_sh'];
+
+            for (const key of filesToDownload) {
+                setTimeout(() => {
+                    downloadBackendFile(key);
+                    downloadCount++;
+
+                    if (downloadCount === filesToDownload.length) {
+                        setTimeout(() => {
+                            showAlert('Launcher files downloaded! Now download local_backend.py separately.', 'success');
+                        }, 500);
+                    }
+                }, downloadCount * 300); // Stagger downloads
+            }
+        }
+
+        // Prompt user to download local_backend.py
+        function promptBackendDownload() {
+            // Try to fetch from current directory (works if running locally)
+            const backendUrl = window.location.href.includes('file://')
+                ? '../local_backend.py'
+                : 'local_backend.py';
+
+            fetch(backendUrl)
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    }
+                    throw new Error('File not found locally');
+                })
+                .then(content => {
+                    // Download the file
+                    const blob = new Blob([content], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'local_backend.py';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showAlert('Downloaded: local_backend.py', 'success');
+                })
+                .catch(error => {
+                    // Show instruction modal if file cannot be fetched
+                    showBackendDownloadModal();
+                });
+        }
+
+        // Show modal with instructions to download local_backend.py
+        function showBackendDownloadModal() {
+            const modal = document.createElement('div');
+            modal.style.cssText = \`
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                padding: 20px;
+            \`;
+
+            modal.innerHTML = \`
+                <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                    <h2 style="margin-top: 0; color: #333;">📄 Download local_backend.py</h2>
+                    <p>The <code>local_backend.py</code> file (400+ lines) is required for YOLO-NAS backend.</p>
+
+                    <div style="background: #f0f0f0; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <p style="margin: 5px 0;"><strong>Option 1: Download from GitHub</strong></p>
+                        <p style="margin: 5px 0; font-size: 0.9em;">
+                            If this project is on GitHub, go to the repository and download <code>local_backend.py</code>
+                        </p>
+                    </div>
+
+                    <div style="background: #e7f3ff; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <p style="margin: 5px 0;"><strong>Option 2: Create from Scratch</strong></p>
+                        <p style="margin: 5px 0; font-size: 0.9em;">
+                            The file contains Flask API endpoints for:
+                        </p>
+                        <ul style="font-size: 0.9em; margin: 10px 0;">
+                            <li>/api/health - Health check</li>
+                            <li>/api/check-model - Check if model exists</li>
+                            <li>/api/download-model - Download YOLO model</li>
+                            <li>/api/process-video - Process video with YOLO-NAS</li>
+                        </ul>
+                        <p style="margin: 5px 0; font-size: 0.85em; color: #666;">
+                            Contact the project maintainer for the complete file.
+                        </p>
+                    </div>
+
+                    <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <p style="margin: 5px 0;"><strong>💡 Alternative: Use MediaPipe</strong></p>
+                        <p style="margin: 5px 0; font-size: 0.9em;">
+                            Switch to <strong>MediaPipe (Browser)</strong> mode for zero setup!
+                        </p>
+                    </div>
+
+                    <button class="btn" onclick="this.parentElement.parentElement.remove()" style="width: 100%; margin-top: 15px;">
+                        Close
+                    </button>
+                </div>
+            \`;
+
+            document.body.appendChild(modal);
+
+            // Close on background click
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
         }
 
         // Initialize MediaPipe Pose
