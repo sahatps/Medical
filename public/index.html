@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tennis Pose Estimation - Local Processing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .status-badge.online {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-badge.offline {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        .settings-panel, .upload-panel {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .setting-group {
+            margin-bottom: 25px;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .setting-group input[type="text"],
+        .setting-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+        }
+
+        .setting-group input[type="text"]:focus,
+        .setting-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .device-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background-color: #f8f9ff;
+        }
+
+        .upload-area.dragover {
+            background-color: #e8ecff;
+            border-color: #764ba2;
+        }
+
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-info {
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .file-info.show {
+            display: block;
+        }
+
+        .model-options {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .model-option input[type="radio"] {
+            display: none;
+        }
+
+        .model-option label {
+            display: block;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .model-option input[type="radio"]:checked + label {
+            background-color: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .model-option label:hover {
+            border-color: #667eea;
+        }
+
+        .model-info {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .model-option input[type="radio"]:checked + label .model-info {
+            color: #fff;
+        }
+
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .progress-container.show {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background-color: #f0f0f0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-message {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .result-container {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        .download-btn {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .model-options {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎾 Tennis Pose Estimation</h1>
+            <p class="subtitle">Local Processing with GPU/CPU Support</p>
+            <div class="status-badge offline" id="statusBadge">
+                Backend: Offline
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Settings Panel -->
+            <div class="settings-panel">
+                <h2>⚙️ Settings</h2>
+
+                <div class="setting-group">
+                    <label for="backendUrl">Backend URL:</label>
+                    <input type="text" id="backendUrl" value="http://localhost:5000" placeholder="http://localhost:5000">
+                    <button class="btn" onclick="testConnection()">Test Connection</button>
+                </div>
+
+                <div class="setting-group">
+                    <label for="deviceSelect">Processing Device:</label>
+                    <select id="deviceSelect" onchange="updateDevice()">
+                        <option value="cpu">CPU</option>
+                        <option value="cuda">GPU (CUDA)</option>
+                    </select>
+                    <div class="device-info" id="deviceInfo">
+                        Checking...
+                    </div>
+                </div>
+
+                <div class="setting-group">
+                    <label for="modelPath">Model Cache Path (Optional):</label>
+                    <input type="text" id="modelPath" placeholder="Leave empty for default">
+                    <button class="btn btn-secondary" onclick="updateModelPath()">Update Path</button>
+                </div>
+
+                <div class="alert alert-warning">
+                    <strong>Note:</strong> You need to run <code>python local_backend.py</code> on your local machine first!
+                </div>
+            </div>
+
+            <!-- Upload Panel -->
+            <div class="upload-panel">
+                <h2>📹 Process Video</h2>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📹</div>
+                    <h3>Click to upload or drag and drop</h3>
+                    <p>MP4, MOV, or AVI (Max 500MB)</p>
+                    <input type="file" id="videoInput" accept="video/mp4,video/mov,video/avi">
+                </div>
+
+                <div class="file-info" id="fileInfo">
+                    <strong>Selected file:</strong> <span id="fileName"></span><br>
+                    <strong>Size:</strong> <span id="fileSize"></span>
+                </div>
+
+                <div class="setting-group">
+                    <label>Select Model:</label>
+                    <div class="model-options">
+                        <div class="model-option">
+                            <input type="radio" name="model" id="modelN" value="N" checked onchange="checkModelStatus()">
+                            <label for="modelN">
+                                Nano (N)
+                                <div class="model-info" id="modelInfoN">Fastest</div>
+                            </label>
+                        </div>
+                        <div class="model-option">
+                            <input type="radio" name="model" id="modelS" value="S" onchange="checkModelStatus()">
+                            <label for="modelS">
+                                Small (S)
+                                <div class="model-info" id="modelInfoS">Fast</div>
+                            </label>
+                        </div>
+                        <div class="model-option">
+                            <input type="radio" name="model" id="modelM" value="M" onchange="checkModelStatus()">
+                            <label for="modelM">
+                                Medium (M)
+                                <div class="model-info" id="modelInfoM">Balanced</div>
+                            </label>
+                        </div>
+                        <div class="model-option">
+                            <input type="radio" name="model" id="modelL" value="L" onchange="checkModelStatus()">
+                            <label for="modelL">
+                                Large (L)
+                                <div class="model-info" id="modelInfoL">Best</div>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="modelStatus" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; display: none;">
+                        <strong>Model Status:</strong> <span id="modelStatusText">Checking...</span><br>
+                        <button class="btn" id="downloadModelBtn" onclick="downloadModel()" style="margin-top: 5px; display: none;">
+                            Download Model
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn" id="processBtn" onclick="processVideo()" disabled>Process Video</button>
+
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill">0%</div>
+                    </div>
+                    <div class="status-message" id="statusMessage">Processing...</div>
+                </div>
+
+                <div class="alert alert-error" id="errorMessage"></div>
+
+                <div class="result-container" id="resultContainer">
+                    <h3>✅ Processing Complete!</h3>
+                    <p>Your video has been processed successfully.</p>
+                    <a href="#" class="download-btn" id="downloadBtn" download>Download Processed Video</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let backendUrl = 'http://localhost:5000';
+
+        // Initialize
+        window.addEventListener('load', () => {
+            const savedUrl = localStorage.getItem('backendUrl');
+            if (savedUrl) {
+                backendUrl = savedUrl;
+                document.getElementById('backendUrl').value = savedUrl;
+            }
+            testConnection();
+            checkModelStatus();
+        });
+
+        // Test backend connection
+        async function testConnection() {
+            const url = document.getElementById('backendUrl').value;
+            backendUrl = url;
+            localStorage.setItem('backendUrl', url);
+
+            const statusBadge = document.getElementById('statusBadge');
+            const deviceInfo = document.getElementById('deviceInfo');
+
+            try {
+                const response = await fetch(`${backendUrl}/api/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    statusBadge.className = 'status-badge online';
+                    statusBadge.textContent = 'Backend: Online';
+
+                    deviceInfo.innerHTML = `
+                        <strong>Status:</strong> Connected<br>
+                        <strong>Current Device:</strong> ${data.device.toUpperCase()}<br>
+                        <strong>CUDA Available:</strong> ${data.cuda_available ? 'Yes' : 'No'}
+                        ${data.cuda_available ? `<br><strong>GPU:</strong> ${data.cuda_device}` : ''}
+                    `;
+
+                    // Update device selector
+                    document.getElementById('deviceSelect').value = data.device;
+                    if (!data.cuda_available) {
+                        document.getElementById('deviceSelect').querySelector('option[value="cuda"]').disabled = true;
+                    }
+                } else {
+                    throw new Error('Connection failed');
+                }
+            } catch (error) {
+                statusBadge.className = 'status-badge offline';
+                statusBadge.textContent = 'Backend: Offline';
+                deviceInfo.innerHTML = '<strong>Status:</strong> Cannot connect to backend. Make sure local_backend.py is running!';
+            }
+        }
+
+        // Update device
+        async function updateDevice() {
+            const device = document.getElementById('deviceSelect').value;
+
+            try {
+                const response = await fetch(`${backendUrl}/api/settings`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({device: device})
+                });
+
+                if (response.ok) {
+                    showAlert('Device updated successfully!', 'success');
+                    testConnection();
+                } else {
+                    const error = await response.json();
+                    showAlert(error.error || 'Failed to update device', 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to update device: ' + error.message, 'error');
+            }
+        }
+
+        // Update model path
+        async function updateModelPath() {
+            const path = document.getElementById('modelPath').value;
+
+            try {
+                const response = await fetch(`${backendUrl}/api/settings`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        model_path: path,
+                        use_custom_path: path !== ''
+                    })
+                });
+
+                if (response.ok) {
+                    showAlert('Model path updated successfully!', 'success');
+                } else {
+                    showAlert('Failed to update model path', 'error');
+                }
+            } catch (error) {
+                showAlert('Failed to update model path: ' + error.message, 'error');
+            }
+        }
+
+        // Upload area handlers
+        const uploadArea = document.getElementById('uploadArea');
+        const videoInput = document.getElementById('videoInput');
+
+        uploadArea.addEventListener('click', () => videoInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        videoInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            const validTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
+            if (!validTypes.includes(file.type)) {
+                showAlert('Please select a valid video file (MP4, MOV, or AVI)', 'error');
+                return;
+            }
+
+            if (file.size > 500 * 1024 * 1024) {
+                showAlert('File size exceeds 500MB limit', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            document.getElementById('fileInfo').classList.add('show');
+            document.getElementById('processBtn').disabled = false;
+            hideAlert();
+            document.getElementById('resultContainer').classList.remove('show');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Process video
+        async function processVideo() {
+            if (!selectedFile) return;
+
+            const selectedModel = document.querySelector('input[name="model"]:checked').value;
+
+            document.getElementById('progressContainer').classList.add('show');
+            document.getElementById('resultContainer').classList.remove('show');
+            hideAlert();
+            document.getElementById('processBtn').disabled = true;
+
+            const formData = new FormData();
+            formData.append('video', selectedFile);
+            formData.append('model', selectedModel);
+
+            try {
+                updateProgress(10, 'Uploading video to local backend...');
+
+                const response = await fetch(`${backendUrl}/api/process-video`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Processing failed');
+                }
+
+                updateProgress(90, 'Finalizing...');
+
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                updateProgress(100, 'Complete!');
+
+                document.getElementById('downloadBtn').href = url;
+                document.getElementById('downloadBtn').download = 'processed_' + selectedFile.name;
+                document.getElementById('resultContainer').classList.add('show');
+
+                setTimeout(() => {
+                    document.getElementById('progressContainer').classList.remove('show');
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('Processing failed: ' + error.message, 'error');
+                document.getElementById('progressContainer').classList.remove('show');
+            } finally {
+                document.getElementById('processBtn').disabled = false;
+            }
+        }
+
+        function updateProgress(percent, message) {
+            document.getElementById('progressFill').style.width = percent + '%';
+            document.getElementById('progressFill').textContent = percent + '%';
+            document.getElementById('statusMessage').textContent = message;
+        }
+
+        function showAlert(message, type) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.className = `alert alert-${type} show`;
+        }
+
+        function hideAlert() {
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+
+        // Check if selected model exists locally
+        async function checkModelStatus() {
+            const selectedModel = document.querySelector('input[name="model"]:checked').value;
+            const modelStatus = document.getElementById('modelStatus');
+            const modelStatusText = document.getElementById('modelStatusText');
+            const downloadBtn = document.getElementById('downloadModelBtn');
+
+            try {
+                const response = await fetch(`${backendUrl}/api/check-model`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({model: selectedModel})
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    modelStatus.style.display = 'block';
+
+                    if (data.exists) {
+                        modelStatusText.innerHTML = `✅ Model ${selectedModel} is ready (already downloaded)`;
+                        modelStatusText.style.color = '#155724';
+                        downloadBtn.style.display = 'none';
+                    } else {
+                        modelStatusText.innerHTML = `⚠️ Model ${selectedModel} not found. It will be downloaded automatically when you process a video, or you can download it now.`;
+                        modelStatusText.style.color = '#856404';
+                        downloadBtn.style.display = 'block';
+                        downloadBtn.textContent = `Download Model ${selectedModel}`;
+                    }
+                } else {
+                    modelStatus.style.display = 'none';
+                }
+            } catch (error) {
+                modelStatus.style.display = 'none';
+            }
+        }
+
+        // Download model manually
+        async function downloadModel() {
+            const selectedModel = document.querySelector('input[name="model"]:checked').value;
+            const downloadBtn = document.getElementById('downloadModelBtn');
+            const modelStatusText = document.getElementById('modelStatusText');
+
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = 'Downloading...';
+            modelStatusText.innerHTML = `⏳ Downloading Model ${selectedModel}... This may take a few minutes.`;
+            modelStatusText.style.color = '#856404';
+
+            try {
+                const response = await fetch(`${backendUrl}/api/download-model`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({model: selectedModel})
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+
+                    if (data.already_exists) {
+                        modelStatusText.innerHTML = `✅ Model ${selectedModel} already exists!`;
+                        modelStatusText.style.color = '#155724';
+                        showAlert(`Model ${selectedModel} already downloaded!`, 'success');
+                    } else {
+                        modelStatusText.innerHTML = `✅ Model ${selectedModel} downloaded successfully!`;
+                        modelStatusText.style.color = '#155724';
+                        showAlert(`Model ${selectedModel} downloaded successfully!`, 'success');
+                    }
+
+                    downloadBtn.style.display = 'none';
+                } else {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Download failed');
+                }
+            } catch (error) {
+                modelStatusText.innerHTML = `❌ Failed to download Model ${selectedModel}`;
+                modelStatusText.style.color = '#721c24';
+                showAlert('Download failed: ' + error.message, 'error');
+                downloadBtn.disabled = false;
+                downloadBtn.textContent = `Download Model ${selectedModel}`;
+            }
+        }
+    </script>
+</body>
+</html>

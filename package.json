@@ -1,0 +1,12 @@
+{
+  "name": "tennis-pose-estimation",
+  "version": "1.0.0",
+  "description": "Tennis Pose Estimation Web Application",
+  "scripts": {
+    "dev": "python api/index.py",
+    "vercel-build": "echo 'Building for Vercel'"
+  },
+  "keywords": ["pose-estimation", "tennis", "computer-vision", "yolo"],
+  "author": "",
+  "license": "MIT"
+}
