@@ -1,281 +1,225 @@
-# Tennis Pose Estimation Web Application
+# Tennis Pose Estimation - Browser Auto Processing
 
-เว็บแอปพลิเคชันสำหรับวิเคราะห์ท่าทางในวิดีโอเทนนิสโดยใช้ YOLO-NAS Pose Estimation
+**Automatic pose estimation running 100% in your browser - No backend setup required!**
 
-## 🎯 จุดเด่น (ฟรี 100%!)
+## 🎯 Key Features
 
-- ✅ **ประมวลผลบนเครื่องตัวเอง** - ใช้ GPU/CPU ของคุณเอง ไม่มี timeout!
-- ✅ **เลือก Model Path ได้** - กำหนดที่เก็บโมเดลได้ตามต้องการ
-- ✅ **รองรับ GPU (CUDA)** - ประมวลผลเร็วด้วย GPU ของคุณ
-- ✅ **Frontend บน Vercel (ฟรี)** - เว็บ UI สวยงามโหลดเร็ว
-- ✅ **ไม่มีค่าใช้จ่าย** - Backend รันบนเครื่องคุณ, Frontend ฟรีบน Vercel
+- ✅ **Fully Automatic** - Just open the link and use immediately
+- ✅ **No Installation** - Runs directly in your web browser
+- ✅ **No Backend Server** - Everything processes on your device
+- ✅ **Uses Your CPU/GPU** - Automatic hardware acceleration via WebGL
+- ✅ **100% Free** - No server costs, no API fees
+- ✅ **Privacy First** - Videos never leave your device
+- ✅ **Deploy Anywhere** - Works on Vercel, GitHub Pages, or open locally
 
-## คุณสมบัติ
+## 🚀 How to Use (Just 1 Step!)
 
-- อัปโหลดวิดีโอ (MP4, MOV, AVI) ขนาดใหญ่ได้ (500MB)
-- เลือกโมเดล AI (N, S, M, L) ตามความต้องการความเร็วและความแม่นยำ
-- เลือกใช้ CPU หรือ GPU (CUDA) สำหรับประมวลผล
-- กำหนด Model Cache Path เองได้
-- ประมวลผลวิดีโอและแสดงโครงกระดูกของผู้เล่น
-- ดาวน์โหลดวิดีโอที่ผ่านการประมวลผล
-- Frontend deploy บน Vercel (ฟรี)
+### Option 1: Use Deployed Version (Recommended)
+1. Open the deployed URL (e.g., on Vercel)
+2. Upload a video
+3. Click "Start Processing"
+4. Download the result!
 
-## โมเดล AI ที่รองรับ
+### Option 2: Open Locally
+1. Open `public/index.html` in your web browser
+2. Upload a video
+3. Click "Start Processing"
+4. Download the result!
 
-- **Nano (N)**: เร็วที่สุด, ขนาดเล็ก
-- **Small (S)**: เร็ว, ความแม่นยำดี
-- **Medium (M)**: สมดุลระหว่างความเร็วและความแม่นยำ
-- **Large (L)**: ความแม่นยำสูงสุด, ช้าที่สุด
+That's it! No Python, no backend server, no installation needed!
 
-## 🚀 วิธีใช้งาน (3 ขั้นตอน)
+## 🌐 Deploy to Vercel (Free Forever)
 
-### ขั้นตอนที่ 1: ติดตั้ง Backend บนเครื่องคุณ
+### Method 1: Using Vercel Dashboard (Easiest)
 
-#### ความต้องการของระบบ
-- Python 3.8 ขึ้นไป
-- pip
-- (Optional) NVIDIA GPU + CUDA สำหรับประมวลผลเร็วขึ้น
-
-#### ติดตั้ง Dependencies
-
-```bash
-# ติดตั้ง Python packages
-pip install -r requirements-local.txt
-```
-
-#### สำหรับผู้ใช้ GPU (Optional)
-```bash
-# ติดตั้ง PyTorch with CUDA support
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-```
-
-### ขั้นตอนที่ 2: รัน Backend บนเครื่อง
-
-#### Windows:
-```bash
-start_backend.bat
-```
-
-#### Mac/Linux:
-```bash
-chmod +x start_backend.sh
-./start_backend.sh
-```
-
-#### หรือรันด้วยคำสั่ง Python:
-```bash
-python local_backend.py
-```
-
-Backend จะรันที่ `http://localhost:5000`
-
-### ขั้นตอนที่ 3: เข้าใช้งานผ่าน Browser
-
-**ตัวเลือก A: ใช้ผ่าน Vercel (แนะนำ)**
-1. Deploy frontend บน Vercel (ดูขั้นตอนด้านล่าง)
-2. เปิด URL ที่ Vercel ให้มา เช่น `https://your-app.vercel.app`
-3. Backend URL จะถูกตั้งเป็น `http://localhost:5000` อัตโนมัติ
-
-**ตัวเลือก B: เปิดไฟล์ในเครื่อง**
-1. เปิดไฟล์ `public/index.html` ด้วย browser
-2. ตั้งค่า Backend URL เป็น `http://localhost:5000`
-
-## 🌐 การ Deploy Frontend บน Vercel (ฟรี!)
-
-Vercel จะใช้เป็น **Static Site Hosting** เท่านั้น (ไม่มีข้อจำกัด timeout หรือ memory!)
-
-### วิธี Deploy
-
-#### วิธีที่ 1: ใช้ Vercel Dashboard (ง่ายสุด)
-
-1. สร้าง GitHub repository:
+1. Create a GitHub repository:
 ```bash
 git init
 git add .
-git commit -m "Initial commit: Tennis Pose Estimation"
-git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
+git commit -m "Tennis Pose Estimation - Browser Version"
 git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
 git push -u origin main
 ```
 
-2. ไปที่ [Vercel Dashboard](https://vercel.com/dashboard)
+2. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+3. Click "Add New Project"
+4. Import your GitHub repository
+5. Click "Deploy"
+6. Done! You'll get a URL like `https://tennis-pose.vercel.app`
 
-3. คลิก "Add New Project"
-
-4. Import repository จาก GitHub
-
-5. Vercel จะตรวจจับ `vercel.json` อัตโนมัติ
-
-6. คลิก "Deploy"
-
-7. เสร็จแล้ว! คุณจะได้ URL เช่น `https://tennis-pose.vercel.app`
-
-#### วิธีที่ 2: ใช้ Vercel CLI
+### Method 2: Using Vercel CLI
 
 ```bash
-# ติดตั้ง Vercel CLI
 npm install -g vercel
-
-# Deploy
 vercel
-
-# หรือ deploy เป็น production
-vercel --prod
 ```
 
-### ✅ ข้อดีของระบบนี้
+## ⚙️ Settings & Configuration
 
-- ✅ **ไม่มี Timeout** - ประมวลผลบนเครื่องคุณเอง นานแค่ไหนก็ได้!
-- ✅ **ไม่มี Memory Limit** - ใช้ RAM/GPU ของคุณเองเต็มที่
-- ✅ **Vercel ฟรี** - เพราะใช้แค่ static hosting
-- ✅ **วิดีโอขนาดใหญ่ได้** - จำกัดแค่ storage ของคุณ
-- ✅ **โมเดลใหญ่ได้** - ไม่มีข้อจำกัด download size
+The application includes adjustable settings:
 
-## 📁 โครงสร้างโปรเจกต์
+- **Model Quality**:
+  - Lite (Fastest)
+  - Full (Balanced) - Default
+  - Heavy (Best Quality)
+
+- **Detection Confidence**: How confident the AI should be before detecting a pose
+  - Low (0.3)
+  - Medium (0.5) - Default
+  - High (0.7)
+
+- **Tracking Confidence**: How well poses are tracked between frames
+  - Low (0.3)
+  - Medium (0.5) - Default
+  - High (0.7)
+
+- **Smooth Pose**: Enable smoothing for more stable skeleton visualization
+
+## 🎥 Supported Video Formats
+
+- MP4
+- MOV
+- WebM
+- Any video format supported by your browser
+
+Output format: WebM (VP9 codec)
+
+## 🛠️ Technology Stack
+
+- **Frontend**: Pure HTML, CSS, JavaScript
+- **AI Engine**: MediaPipe Pose (Google)
+- **Processing**: WebAssembly + WebGL acceleration
+- **Recording**: MediaRecorder API
+- **Hosting**: Static hosting (Vercel, GitHub Pages, etc.)
+
+## 📁 Project Structure
 
 ```
-tenniss/
+Medical/
 ├── public/
-│   └── index.html           # Frontend (Static site สำหรับ Vercel)
-├── local_backend.py         # Backend ที่รันบนเครื่องคุณ
-├── start_backend.bat        # Script รัน backend (Windows)
-├── start_backend.sh         # Script รัน backend (Mac/Linux)
-├── requirements.txt         # Python dependencies
-├── vercel.json             # Vercel configuration (Static hosting)
-├── package.json            # Project metadata
-├── .gitignore              # Git ignore rules
-└── README.md               # Documentation (ไฟล์นี้)
+│   └── index.html          # Complete application (all-in-one file)
+├── local_backend.py        # OLD - No longer needed
+├── vercel.json            # Vercel configuration
+├── package.json           # Project metadata
+└── README.md             # This file
 ```
 
-## ⚙️ การตั้งค่า
+## 🔍 How It Works
 
-### เลือก GPU/CPU
+1. **User uploads video** - Video loaded into browser memory
+2. **MediaPipe initializes** - AI model loads from CDN (cached after first use)
+3. **Frame-by-frame processing**:
+   - Video plays in the background
+   - Each frame is analyzed by MediaPipe Pose
+   - Skeleton overlay is drawn on canvas
+   - Canvas is recorded in real-time
+4. **Output generation** - Recorded frames compiled into WebM video
+5. **Download** - User downloads the processed video
 
-ในหน้าเว็บ คุณสามารถเลือกได้ว่าจะใช้:
-- **CPU**: ประมวลผลช้ากว่า แต่ทุกเครื่องมี
-- **GPU (CUDA)**: ประมวลผลเร็วมาก ต้องมี NVIDIA GPU
+All of this happens in your browser using WebAssembly and WebGL!
 
-### กำหนด Model Path
+## 💡 Key Benefits
 
-คุณสามารถกำหนดที่เก็บ model ได้ 2 แบบ:
+### vs. Old Flask Backend Version:
+- ❌ No Python installation needed
+- ❌ No dependency management
+- ❌ No backend server to run
+- ❌ No CORS issues
+- ✅ Instant startup
+- ✅ Works on any device with a browser
+- ✅ Easy to deploy and share
 
-1. **ใช้ Default Path** (แนะนำ):
-   - Windows: `C:\Users\YOUR_NAME\.cache\torch\hub\checkpoints\`
-   - Mac/Linux: `~/.cache/torch/hub/checkpoints/`
-
-2. **กำหนด Custom Path**:
-   - ใส่ path ที่ต้องการในหน้าเว็บ
-   - โมเดลจะถูกโหลดมาจาก path ที่กำหนด
-
-## 🔌 API Endpoints (Local Backend)
-
-### GET /api/health
-ตรวจสอบสถานะของ Backend
-```json
-{
-  "status": "ok",
-  "message": "Local Pose Estimation Backend is running",
-  "device": "cuda",
-  "cuda_available": true,
-  "cuda_device": "NVIDIA GeForce RTX 3080",
-  "model_path": null,
-  "use_custom_path": false
-}
-```
-
-### GET /api/settings
-ดูการตั้งค่าปัจจุบัน
-
-### POST /api/settings
-อัพเดทการตั้งค่า
-```json
-{
-  "device": "cuda",           // "cpu" หรือ "cuda"
-  "model_path": "/path/to/models",
-  "use_custom_path": true
-}
-```
-
-### GET /api/model-info
-ดูข้อมูลโมเดลที่มี
-
-### POST /api/download-model
-ดาวน์โหลดโมเดล
-```json
-{
-  "model": "N"  // N, S, M, หรือ L
-}
-```
-
-### POST /api/process-video
-ประมวลผลวิดีโอ
-
-**Request:**
-- Method: POST
-- Content-Type: multipart/form-data
-- Body:
-  - `video`: ไฟล์วิดีโอ (MP4, MOV, AVI)
-  - `model`: โมเดล AI (N, S, M, L)
-
-**Response:**
-- วิดีโอที่ผ่านการประมวลผล (video/mp4)
-
-## 🛠️ เทคโนโลยีที่ใช้
-
-- **Backend**: Flask (Python) - รันบน Local
-- **Frontend**: HTML, CSS, JavaScript - Host บน Vercel
-- **AI Model**: YOLO-NAS Pose Estimation (Super-Gradients)
-- **Deep Learning**: PyTorch + CUDA Support
-- **Computer Vision**: OpenCV
-- **Hosting**: Vercel (Static Site - ฟรี!)
-
-## 🎓 Architecture
-
-```
-┌─────────────────┐
-│   Vercel        │
-│   (Frontend)    │  <- Static HTML/CSS/JS (ฟรี)
-│  your-app.      │
-│  vercel.app     │
-└────────┬────────┘
-         │ HTTP Request
-         ↓
-┌─────────────────┐
-│  Your Computer  │
-│  (Backend)      │  <- Flask + PyTorch + GPU
-│  localhost:5000 │
-└─────────────────┘
-         │
-         ↓
-    Process Video
-    with AI Model
-```
+### vs. Cloud Processing:
+- ✅ No upload time
+- ✅ No download time (for input)
+- ✅ Complete privacy
+- ✅ No API costs
+- ✅ Works offline (after first load)
+- ✅ No file size limits
 
 ## 🔧 Troubleshooting
 
-### Backend ไม่ติด
-- ตรวจสอบว่ารัน `python local_backend.py` แล้วหรือยัง
-- ตรวจสอบว่า port 5000 ไม่ถูกใช้งานโดยโปรแกรมอื่น
-- ลองเปลี่ยน port ใน `local_backend.py` (บรรทัดสุดท้าย)
+### Processing is slow
+- Try using the "Lite" model quality
+- Use a modern browser (Chrome, Edge, Firefox)
+- Close other tabs/applications
+- Reduce video resolution before uploading
 
-### GPU ไม่ทำงาน
-- ตรวจสอบว่าติดตั้ง CUDA แล้ว: `nvidia-smi`
-- ติดตั้ง PyTorch with CUDA: `pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118`
-- ตรวจสอบใน Backend console ว่า CUDA available หรือไม่
+### Video won't upload
+- Check file format (MP4, MOV, WebM)
+- Try a different browser
+- Check browser console for errors
 
-### ประมวลผลช้า
-- ลองใช้โมเดลเล็กกว่า (N แทน L)
-- เปลี่ยนจาก CPU เป็น GPU (ถ้ามี)
-- ลดความละเอียดของวิดีโอ
+### Pose detection not working
+- Ensure people are clearly visible in the video
+- Try adjusting detection confidence to "Low"
+- Check that the video has good lighting
+
+### Download not working
+- Check browser's download settings
+- Try a different browser
+- Ensure pop-ups are not blocked
+
+## 🌟 Browser Compatibility
+
+Works best on:
+- Chrome 80+
+- Edge 80+
+- Firefox 75+
+- Safari 14+
+
+Requires:
+- WebAssembly support
+- Canvas API
+- MediaRecorder API
+- ES6+ JavaScript
+
+## 📊 Performance
+
+Approximate processing speeds (depends on device):
+
+| Device Type | Model Quality | Speed |
+|------------|---------------|-------|
+| High-end laptop | Heavy | 5-10 FPS |
+| Mid-range laptop | Full | 10-15 FPS |
+| Low-end device | Lite | 15-20 FPS |
+
+Note: WebGL acceleration significantly improves performance
+
+## 🔐 Privacy & Security
+
+- **No data collection** - Nothing is sent to any server
+- **Local processing** - All computation happens in your browser
+- **No tracking** - No analytics, no cookies
+- **Open source** - Code is transparent and auditable
 
 ## 📝 License
 
-MIT
+MIT License - Free to use, modify, and distribute
 
-## 👨‍💻 Author
+## 👨‍💻 Credits
 
-Tennis Pose Estimation Project - Local Processing Edition
+- **MediaPipe**: Google's ML framework for pose detection
+- **Original Concept**: Tennis Pose Estimation Project
 
 ---
 
-**สนุกกับการวิเคราะห์ท่าทางเทนนิส! 🎾**
+**Enjoy analyzing tennis poses with zero setup! 🎾**
+
+## 🆚 Comparison: Old vs New Version
+
+### Old Version (Flask Backend):
+1. Install Python
+2. Install dependencies (`pip install -r requirements.txt`)
+3. Download AI models (50-200MB)
+4. Run backend server (`python local_backend.py`)
+5. Open frontend
+6. Configure backend URL
+7. Upload and process video
+
+### New Version (Browser Auto):
+1. Open link
+2. Upload and process video
+
+**That's it!** 🎉
