@@ -264,16 +264,19 @@
     <div class="container">
         <div class="header">
             <h1>🎾 Tennis Pose Estimation</h1>
-            <p class="subtitle">Automatic Browser-Based Processing (No Backend Required!)</p>
+            <p class="subtitle">Dual-Engine Support: MediaPipe (Browser) & YOLO-NAS (Backend)</p>
             <div class="status-badge" id="statusBadge">
-                ✅ Ready - Running in Your Browser
+                ✅ Ready - Choose Your Engine Below
             </div>
         </div>
 
         <div class="main-content">
             <div class="info-box">
-                <strong>🚀 How it works:</strong> Just upload a video and it will automatically process in your browser using your CPU/GPU.
-                No installation, no backend server needed - everything runs locally on your device!
+                <strong>🚀 How it works:</strong> Choose your pose estimation engine:
+                <ul style="margin: 10px 0 0 20px;">
+                    <li><strong>MediaPipe (Browser):</strong> Runs entirely in your browser - no installation needed!</li>
+                    <li><strong>YOLO-NAS (Backend):</strong> Uses powerful Python backend for better accuracy (requires running <code>local_backend.py</code>)</li>
+                </ul>
             </div>
 
             <!-- Settings Panel -->
@@ -281,6 +284,15 @@
                 <h2>⚙️ Settings</h2>
                 <div class="settings-grid">
                     <div class="setting-item">
+                        <label for="engineSelect">Pose Engine:</label>
+                        <select id="engineSelect" onchange="handleEngineChange()">
+                            <option value="mediapipe" selected>MediaPipe (Browser)</option>
+                            <option value="yolonas">YOLO-NAS (Backend)</option>
+                        </select>
+                    </div>
+
+                    <!-- MediaPipe Settings (shown by default) -->
+                    <div class="setting-item mediapipe-settings">
                         <label for="modelComplexity">Model Quality:</label>
                         <select id="modelComplexity">
                             <option value="0">Lite (Fastest)</option>
@@ -288,7 +300,7 @@
                             <option value="2">Heavy (Best Quality)</option>
                         </select>
                     </div>
-                    <div class="setting-item">
+                    <div class="setting-item mediapipe-settings">
                         <label for="minDetectionConfidence">Detection Confidence:</label>
                         <select id="minDetectionConfidence">
                             <option value="0.3">Low (0.3)</option>
@@ -296,7 +308,7 @@
                             <option value="0.7">High (0.7)</option>
                         </select>
                     </div>
-                    <div class="setting-item">
+                    <div class="setting-item mediapipe-settings">
                         <label for="minTrackingConfidence">Tracking Confidence:</label>
                         <select id="minTrackingConfidence">
                             <option value="0.3">Low (0.3)</option>
@@ -304,14 +316,32 @@
                             <option value="0.7">High (0.7)</option>
                         </select>
                     </div>
-                    <div class="setting-item">
+                    <div class="setting-item mediapipe-settings">
                         <label for="smoothLandmarks">Smooth Pose:</label>
                         <select id="smoothLandmarks">
                             <option value="false">Off</option>
                             <option value="true" selected>On</option>
                         </select>
                     </div>
+
+                    <!-- YOLO-NAS Settings (hidden by default) -->
+                    <div class="setting-item yolonas-settings" style="display: none;">
+                        <label for="yoloModel">YOLO Model:</label>
+                        <select id="yoloModel">
+                            <option value="N" selected>Nano (Fastest, ~50MB)</option>
+                            <option value="S">Small (Fast, ~70MB)</option>
+                            <option value="M">Medium (Balanced, ~120MB)</option>
+                            <option value="L">Large (Best, ~200MB)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item yolonas-settings" style="display: none;">
+                        <label for="backendUrl">Backend URL:</label>
+                        <input type="text" id="backendUrl" value="http://localhost:5000" placeholder="http://localhost:5000">
+                    </div>
                 </div>
+
+                <!-- Backend Status (shown when YOLO-NAS selected) -->
+                <div id="backendStatus" style="display: none; margin-top: 15px; padding: 10px; border-radius: 5px;"></div>
             </div>
 
             <!-- Upload Section -->
@@ -374,6 +404,156 @@
         let videoElement = null;
         let canvas = null;
         let canvasCtx = null;
+        let selectedEngine = 'mediapipe';
+        let backendAvailable = false;
+        let modelDownloaded = false;
+
+        // Handle engine change
+        async function handleEngineChange() {
+            selectedEngine = document.getElementById('engineSelect').value;
+
+            // Toggle settings visibility
+            const mediapipeSettings = document.querySelectorAll('.mediapipe-settings');
+            const yolonasSettings = document.querySelectorAll('.yolonas-settings');
+            const backendStatus = document.getElementById('backendStatus');
+
+            if (selectedEngine === 'mediapipe') {
+                mediapipeSettings.forEach(el => el.style.display = 'flex');
+                yolonasSettings.forEach(el => el.style.display = 'none');
+                backendStatus.style.display = 'none';
+            } else {
+                mediapipeSettings.forEach(el => el.style.display = 'none');
+                yolonasSettings.forEach(el => el.style.display = 'flex');
+                backendStatus.style.display = 'block';
+
+                // Check backend status
+                await checkBackendStatus();
+            }
+        }
+
+        // Check if backend is available
+        async function checkBackendStatus() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const statusDiv = document.getElementById('backendStatus');
+
+            statusDiv.innerHTML = '<p>🔄 Checking backend connection...</p>';
+            statusDiv.style.background = '#fff3cd';
+            statusDiv.style.borderLeft = '4px solid #ffc107';
+
+            try {
+                const response = await fetch(`${backendUrl}/api/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    backendAvailable = true;
+
+                    // Check model status
+                    await checkModelStatus();
+                } else {
+                    throw new Error('Backend not responding');
+                }
+            } catch (error) {
+                backendAvailable = false;
+                statusDiv.innerHTML = `
+                    <p><strong>❌ Backend Not Running</strong></p>
+                    <p>Please start the backend server:</p>
+                    <code style="background: #333; color: #0f0; padding: 5px; border-radius: 3px; display: block; margin: 5px 0;">
+                        python local_backend.py
+                    </code>
+                    <p style="font-size: 0.9em; margin-top: 5px;">Or switch back to MediaPipe (Browser) mode.</p>
+                `;
+                statusDiv.style.background = '#f8d7da';
+                statusDiv.style.borderLeft = '4px solid #dc3545';
+            }
+        }
+
+        // Check if model is downloaded
+        async function checkModelStatus() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const modelName = document.getElementById('yoloModel').value;
+            const statusDiv = document.getElementById('backendStatus');
+
+            try {
+                const response = await fetch(`${backendUrl}/api/check-model`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: modelName })
+                });
+
+                const data = await response.json();
+                modelDownloaded = data.exists;
+
+                if (modelDownloaded) {
+                    statusDiv.innerHTML = `
+                        <p><strong>✅ Backend Connected</strong></p>
+                        <p>✅ Model: ${data.model_key} (Downloaded)</p>
+                        <p style="font-size: 0.85em; color: #666;">Path: ${data.default_path || data.custom_path}</p>
+                    `;
+                    statusDiv.style.background = '#d4edda';
+                    statusDiv.style.borderLeft = '4px solid #28a745';
+                } else {
+                    statusDiv.innerHTML = `
+                        <p><strong>✅ Backend Connected</strong></p>
+                        <p>⚠️ Model: ${data.model_key} (Not Downloaded)</p>
+                        <button class="btn" onclick="downloadModel()" style="margin-top: 10px;">📥 Download Model (~${getModelSize(modelName)})</button>
+                        <p style="font-size: 0.85em; color: #666; margin-top: 5px;">Model will be downloaded automatically when you start processing, or click the button to download now.</p>
+                    `;
+                    statusDiv.style.background = '#fff3cd';
+                    statusDiv.style.borderLeft = '4px solid #ffc107';
+                }
+            } catch (error) {
+                console.error('Error checking model:', error);
+            }
+        }
+
+        // Download YOLO model
+        async function downloadModel() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const modelName = document.getElementById('yoloModel').value;
+            const statusDiv = document.getElementById('backendStatus');
+
+            statusDiv.innerHTML = '<p>🔄 Downloading model... This may take a few minutes.</p>';
+            statusDiv.style.background = '#cfe2ff';
+            statusDiv.style.borderLeft = '4px solid #0d6efd';
+
+            try {
+                const response = await fetch(`${backendUrl}/api/download-model`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: modelName })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    modelDownloaded = true;
+                    statusDiv.innerHTML = `
+                        <p><strong>✅ Model Downloaded Successfully!</strong></p>
+                        <p>Model: ${modelName} - Ready to use</p>
+                        <p style="font-size: 0.85em; color: #666;">Path: ${data.path}</p>
+                    `;
+                    statusDiv.style.background = '#d4edda';
+                    statusDiv.style.borderLeft = '4px solid #28a745';
+                    showAlert('Model downloaded successfully!', 'success');
+                } else {
+                    throw new Error(data.error || 'Download failed');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <p><strong>❌ Download Failed</strong></p>
+                    <p>${error.message}</p>
+                    <button class="btn" onclick="downloadModel()" style="margin-top: 10px;">🔄 Retry Download</button>
+                `;
+                statusDiv.style.background = '#f8d7da';
+                statusDiv.style.borderLeft = '4px solid #dc3545';
+                showAlert('Failed to download model: ' + error.message, 'error');
+            }
+        }
+
+        // Get model size
+        function getModelSize(modelName) {
+            const sizes = { 'N': '50MB', 'S': '70MB', 'M': '120MB', 'L': '200MB' };
+            return sizes[modelName] || '~100MB';
+        }
 
         // Initialize MediaPipe Pose
         async function initializePose() {
@@ -498,28 +678,40 @@
             document.getElementById('downloadBtn').style.display = 'none';
             document.getElementById('progressContainer').classList.add('show');
 
-            // Initialize pose if not already done
-            if (!pose) {
-                const initialized = await initializePose();
-                if (!initialized) {
+            if (selectedEngine === 'mediapipe') {
+                // MediaPipe processing
+                if (!pose) {
+                    const initialized = await initializePose();
+                    if (!initialized) {
+                        isProcessing = false;
+                        document.getElementById('processBtn').disabled = false;
+                        return;
+                    }
+                } else {
+                    // Update settings if already initialized
+                    pose.setOptions({
+                        modelComplexity: parseInt(document.getElementById('modelComplexity').value),
+                        smoothLandmarks: document.getElementById('smoothLandmarks').value === 'true',
+                        minDetectionConfidence: parseFloat(document.getElementById('minDetectionConfidence').value),
+                        minTrackingConfidence: parseFloat(document.getElementById('minTrackingConfidence').value)
+                    });
+                }
+
+                updateProgress(60, 'Starting video processing...');
+                await processVideo();
+            } else {
+                // YOLO-NAS processing
+                if (!backendAvailable) {
+                    showAlert('Backend is not available. Please check the connection.', 'error');
                     isProcessing = false;
                     document.getElementById('processBtn').disabled = false;
+                    document.getElementById('progressContainer').classList.remove('show');
                     return;
                 }
-            } else {
-                // Update settings if already initialized
-                pose.setOptions({
-                    modelComplexity: parseInt(document.getElementById('modelComplexity').value),
-                    smoothLandmarks: document.getElementById('smoothLandmarks').value === 'true',
-                    minDetectionConfidence: parseFloat(document.getElementById('minDetectionConfidence').value),
-                    minTrackingConfidence: parseFloat(document.getElementById('minTrackingConfidence').value)
-                });
+
+                updateProgress(10, 'Uploading video to backend...');
+                await processVideoWithYOLO();
             }
-
-            updateProgress(60, 'Starting video processing...');
-
-            // Process video
-            await processVideo();
         }
 
         // Process video frame by frame
@@ -635,6 +827,70 @@
             processFrame();
         }
 
+        // Process video with YOLO-NAS backend
+        async function processVideoWithYOLO() {
+            const backendUrl = document.getElementById('backendUrl').value;
+            const modelName = document.getElementById('yoloModel').value;
+
+            try {
+                // Create form data
+                const formData = new FormData();
+                formData.append('video', selectedVideo);
+                formData.append('model', modelName);
+
+                updateProgress(30, 'Uploading video to backend...');
+
+                // Upload and process
+                const response = await fetch(`${backendUrl}/api/process-video`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Processing failed');
+                }
+
+                updateProgress(90, 'Downloading processed video...');
+
+                // Get the processed video blob
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+
+                // Display in canvas (create a video element to show it)
+                const processedVideo = document.createElement('video');
+                processedVideo.src = url;
+                processedVideo.style.width = '100%';
+                processedVideo.style.maxWidth = '640px';
+                processedVideo.style.borderRadius = '10px';
+                processedVideo.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.2)';
+                processedVideo.controls = true;
+
+                // Replace canvas with video element
+                const canvasParent = canvas.parentElement;
+                canvasParent.innerHTML = '';
+                canvasParent.appendChild(processedVideo);
+
+                // Enable download button
+                document.getElementById('downloadBtn').style.display = 'inline-block';
+                document.getElementById('downloadBtn').setAttribute('data-url', url);
+                document.getElementById('downloadBtn').setAttribute('data-type', 'mp4');
+
+                updateProgress(100, 'Processing complete!');
+                showAlert('Video processing completed! You can now download the result.', 'success');
+
+                isProcessing = false;
+                document.getElementById('processBtn').disabled = false;
+
+            } catch (error) {
+                console.error('Error processing video:', error);
+                showAlert('Failed to process video: ' + error.message, 'error');
+                isProcessing = false;
+                document.getElementById('processBtn').disabled = false;
+                document.getElementById('progressContainer').classList.remove('show');
+            }
+        }
+
         // Download processed video
         function downloadVideo() {
             const url = document.getElementById('downloadBtn').getAttribute('data-url');
@@ -698,6 +954,18 @@
             document.getElementById('errorAlert').classList.remove('show');
             document.getElementById('successAlert').classList.remove('show');
         }
+
+        // Listen for YOLO model changes
+        document.addEventListener('DOMContentLoaded', () => {
+            const yoloModelSelect = document.getElementById('yoloModel');
+            if (yoloModelSelect) {
+                yoloModelSelect.addEventListener('change', async () => {
+                    if (selectedEngine === 'yolonas' && backendAvailable) {
+                        await checkModelStatus();
+                    }
+                });
+            }
+        });
 
         // Initialize on page load
         window.addEventListener('load', () => {

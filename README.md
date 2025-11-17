@@ -1,32 +1,66 @@
-# Tennis Pose Estimation - Browser Auto Processing
+# Tennis Pose Estimation - Dual Engine Support
 
-**Automatic pose estimation running 100% in your browser - No backend setup required!**
+**Choose between browser-based processing (MediaPipe) or powerful backend processing (YOLO-NAS)!**
 
 ## 🎯 Key Features
 
-- ✅ **Fully Automatic** - Just open the link and use immediately
-- ✅ **No Installation** - Runs directly in your web browser
-- ✅ **No Backend Server** - Everything processes on your device
-- ✅ **Uses Your CPU/GPU** - Automatic hardware acceleration via WebGL
-- ✅ **100% Free** - No server costs, no API fees
-- ✅ **Privacy First** - Videos never leave your device
-- ✅ **Deploy Anywhere** - Works on Vercel, GitHub Pages, or open locally
+- ✅ **Dual Engine Support** - Choose MediaPipe (Browser) or YOLO-NAS (Backend)
+- ✅ **MediaPipe Mode** - 100% browser-based, no installation required
+- ✅ **YOLO-NAS Mode** - Advanced accuracy with Python backend
+- ✅ **Automatic Model Download** - Models download automatically when needed
+- ✅ **Privacy First** - Browser mode keeps videos on your device
+- ✅ **Flexible Deployment** - Works on Vercel, GitHub Pages, or locally
+- ✅ **Easy Switching** - Toggle between engines with a dropdown
 
-## 🚀 How to Use (Just 1 Step!)
+## 🚀 How to Use
 
-### Option 1: Use Deployed Version (Recommended)
-1. Open the deployed URL (e.g., on Vercel)
-2. Upload a video
-3. Click "Start Processing"
-4. Download the result!
+### 🌐 Engine 1: MediaPipe (Browser Mode) - **No Setup Required**
 
-### Option 2: Open Locally
-1. Open `public/index.html` in your web browser
-2. Upload a video
-3. Click "Start Processing"
-4. Download the result!
+Perfect for quick, hassle-free processing!
 
-That's it! No Python, no backend server, no installation needed!
+1. Open `public/index.html` in your browser (or deployed URL)
+2. Select **"MediaPipe (Browser)"** from the Pose Engine dropdown
+3. Upload a video
+4. Click "Start Processing"
+5. Download the result!
+
+**Advantages:**
+- ✅ Zero setup - works immediately
+- ✅ 100% private - videos stay in browser
+- ✅ No backend server needed
+- ✅ Works on any device with a browser
+
+### 🔥 Engine 2: YOLO-NAS (Backend Mode) - **Better Accuracy**
+
+For professional-grade pose estimation!
+
+1. **Start the Backend Server:**
+   ```bash
+   python local_backend.py
+   ```
+   The server will start at `http://localhost:5000`
+
+2. **Use the Frontend:**
+   - Open `public/index.html` in your browser
+   - Select **"YOLO-NAS (Backend)"** from the Pose Engine dropdown
+   - The UI will automatically check backend connection
+   - Choose your model: Nano (fastest) to Large (most accurate)
+
+3. **Download Model (if needed):**
+   - If the model isn't downloaded, you'll see a download button
+   - Click "📥 Download Model" or it will auto-download on first use
+   - Models are cached locally after download
+
+4. **Process Video:**
+   - Upload a video
+   - Click "Start Processing"
+   - Download the result!
+
+**Advantages:**
+- ✅ Better accuracy than MediaPipe
+- ✅ 4 model sizes to choose from (Nano, Small, Medium, Large)
+- ✅ GPU acceleration support (CUDA)
+- ✅ Professional-grade results
 
 ## 🌐 Deploy to Vercel (Free Forever)
 
@@ -87,25 +121,56 @@ Output format: WebM (VP9 codec)
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: Pure HTML, CSS, JavaScript
-- **AI Engine**: MediaPipe Pose (Google)
-- **Processing**: WebAssembly + WebGL acceleration
+### Frontend:
+- **UI**: Pure HTML, CSS, JavaScript
 - **Recording**: MediaRecorder API
 - **Hosting**: Static hosting (Vercel, GitHub Pages, etc.)
+
+### AI Engines:
+
+**Option 1: MediaPipe (Browser)**
+- **Engine**: MediaPipe Pose (Google)
+- **Processing**: WebAssembly + WebGL acceleration
+- **Runtime**: 100% browser-based
+- **Models**: Lite, Full, Heavy
+
+**Option 2: YOLO-NAS (Backend)**
+- **Engine**: SuperGradients YOLO-NAS Pose
+- **Framework**: PyTorch
+- **Backend**: Flask + Flask-CORS
+- **Processing**: CPU or CUDA (GPU)
+- **Models**: Nano (~50MB), Small (~70MB), Medium (~120MB), Large (~200MB)
 
 ## 📁 Project Structure
 
 ```
 Medical/
 ├── public/
-│   └── index.html          # Complete application (all-in-one file)
-├── local_backend.py        # OLD - No longer needed
+│   └── index.html          # Frontend with dual-engine support
+├── local_backend.py        # Flask backend for YOLO-NAS (optional)
+├── requirements-local.txt  # Python dependencies for backend
+├── start_backend.sh/.bat   # Scripts to start backend server
 ├── vercel.json            # Vercel configuration
 ├── package.json           # Project metadata
 └── README.md             # This file
 ```
 
+## 🆚 Engine Comparison
+
+| Feature | MediaPipe (Browser) | YOLO-NAS (Backend) |
+|---------|--------------------|--------------------|
+| **Setup** | None - instant | Python + dependencies |
+| **Speed** | Fast (10-20 FPS) | Very Fast (20-60 FPS with GPU) |
+| **Accuracy** | Good | Excellent |
+| **Privacy** | 100% local | Requires local server |
+| **Models** | 3 options | 4 options (N/S/M/L) |
+| **GPU Support** | WebGL only | Full CUDA support |
+| **Best For** | Quick testing, portability | Production, best quality |
+| **Internet** | CDN load once | Model download once |
+
 ## 🔍 How It Works
+
+### MediaPipe (Browser) Workflow:
 
 1. **User uploads video** - Video loaded into browser memory
 2. **MediaPipe initializes** - AI model loads from CDN (cached after first use)
@@ -117,7 +182,22 @@ Medical/
 4. **Output generation** - Recorded frames compiled into WebM video
 5. **Download** - User downloads the processed video
 
-All of this happens in your browser using WebAssembly and WebGL!
+*All processing happens in your browser using WebAssembly and WebGL!*
+
+### YOLO-NAS (Backend) Workflow:
+
+1. **User selects YOLO-NAS engine** - Frontend checks backend availability
+2. **Model verification** - Checks if selected YOLO model is downloaded
+3. **Auto-download** - Downloads model if not present (~50-200MB, one-time)
+4. **Video upload** - Video sent to local backend server
+5. **Backend processing**:
+   - Flask receives video
+   - YOLO-NAS processes each frame
+   - Skeleton overlay drawn using SuperGradients
+   - Processed video encoded as MP4
+6. **Download** - Processed video sent back to browser
+
+*Backend can use CUDA for GPU acceleration!*
 
 ## 💡 Key Benefits
 
