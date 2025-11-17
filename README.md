@@ -40,7 +40,7 @@
 
 ```bash
 # ติดตั้ง Python packages
-pip install -r requirements.txt
+pip install -r requirements-local.txt
 ```
 
 #### สำหรับผู้ใช้ GPU (Optional)
