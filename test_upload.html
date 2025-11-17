@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload</title>
+    <style>
+        .upload-area {
+            border: 2px dashed #666;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            margin: 20px;
+        }
+        .upload-area:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Video Upload</h1>
+    <div class="upload-area" id="uploadArea">
+        <p>Click to upload video</p>
+        <input type="file" id="videoInput" accept="video/*" style="display: none;">
+    </div>
+    <div id="result"></div>
+
+    <script>
+        console.log('Script starting...');
+
+        const uploadArea = document.getElementById('uploadArea');
+        const videoInput = document.getElementById('videoInput');
+
+        console.log('uploadArea:', uploadArea);
+        console.log('videoInput:', videoInput);
+
+        if (uploadArea && videoInput) {
+            uploadArea.addEventListener('click', () => {
+                console.log('Upload area clicked!');
+                videoInput.click();
+            });
+
+            videoInput.addEventListener('change', (e) => {
+                console.log('File selected:', e.target.files[0]);
+                document.getElementById('result').textContent =
+                    'File selected: ' + e.target.files[0].name;
+            });
+
+            console.log('Event listeners attached successfully!');
+        } else {
+            console.error('Elements not found!');
+        }
+    </script>
+</body>
+</html>

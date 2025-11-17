@@ -637,9 +637,9 @@ def check_dependencies():
                 import super_gradients
             else:
                 __import__(package)
-            print(f"  ✅ {package}")
+            print(f"  ✅ \${package}")
         except ImportError:
-            print(f"  ❌ {package} - NOT INSTALLED")
+            print(f"  ❌ \${package} - NOT INSTALLED")
             missing_packages.append(package)
 
     if missing_packages:
@@ -653,7 +653,7 @@ def check_dependencies():
             elif pkg == 'flask_cors':
                 print(f"  pip install flask-cors")
             else:
-                print(f"  pip install {pkg}")
+                print(f"  pip install \${pkg}")
         print()
 
         response = input("Continue anyway? (y/N): ").strip().lower()
@@ -679,7 +679,7 @@ def start_backend():
         app.run(debug=False, host='0.0.0.0', port=5000, use_reloader=False)
 
     except Exception as e:
-        print(f"❌ Error starting backend: {e}")
+        print(f"❌ Error starting backend: \${e}")
         sys.exit(1)
 
 def wait_for_backend(url='http://localhost:5000', timeout=30):
@@ -700,7 +700,7 @@ def wait_for_backend(url='http://localhost:5000', timeout=30):
             time.sleep(0.5)
 
     print(" ❌")
-    print(f"⚠️  Backend failed to start within {timeout} seconds")
+    print(f"⚠️  Backend failed to start within \${timeout} seconds")
     return False
 
 def open_browser():
@@ -709,22 +709,22 @@ def open_browser():
     html_path = Path(__file__).parent / 'public' / 'index.html'
 
     if not html_path.exists():
-        print(f"❌ Error: {html_path} not found!")
+        print(f"❌ Error: \${html_path} not found!")
         return False
 
     # Convert to absolute file URL
-    file_url = f"file://{html_path.absolute()}"
+    file_url = f"file://\${html_path.absolute()}"
 
     print(f"🌐 Opening web interface...")
-    print(f"   URL: {file_url}")
+    print(f"   URL: \${file_url}")
 
     try:
         webbrowser.open(file_url)
         print("✅ Web interface opened in your default browser!")
         return True
     except Exception as e:
-        print(f"❌ Error opening browser: {e}")
-        print(f"\\nPlease manually open: {html_path}")
+        print(f"❌ Error opening browser: \${e}")
+        print(f"\\nPlease manually open: \${html_path}")
         return False
 
 def main():
