@@ -49,22 +49,43 @@ def check_dependencies():
 
     if missing_packages:
         print("\n⚠️  Missing dependencies detected!")
-        print("\nTo install missing packages, run:")
-        print(f"  pip install -r requirements-local.txt")
-        print("\nOr install manually:")
-        for pkg in missing_packages:
-            if pkg == 'cv2':
-                print(f"  pip install opencv-python-headless")
-            elif pkg == 'flask_cors':
-                print(f"  pip install flask-cors")
-            else:
-                print(f"  pip install {pkg}")
+        print("🔧 Auto-installing missing packages...")
         print()
 
-        response = input("Continue anyway? (y/N): ").strip().lower()
-        if response != 'y':
-            print("Exiting...")
-            sys.exit(1)
+        # Auto-install missing packages
+        import subprocess
+
+        # Map package names to pip install names
+        pip_package_map = {
+            'cv2': 'opencv-python-headless',
+            'flask_cors': 'flask-cors',
+            'super_gradients': 'super-gradients'
+        }
+
+        for pkg in missing_packages:
+            pip_name = pip_package_map.get(pkg, pkg)
+            print(f"  📥 Installing {pip_name}...")
+
+            try:
+                subprocess.check_call(
+                    [sys.executable, '-m', 'pip', 'install', pip_name, '--quiet'],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+                print(f"  ✅ {pip_name} installed successfully!")
+            except subprocess.CalledProcessError:
+                print(f"  ❌ Failed to install {pip_name}")
+                print(f"\n⚠️  Please install manually: pip install {pip_name}")
+                print("\nOr run: pip install -r requirements-local.txt")
+                print()
+                response = input("Continue anyway? (y/N): ").strip().lower()
+                if response != 'y':
+                    print("Exiting...")
+                    sys.exit(1)
+
+        print("\n✅ All missing dependencies have been installed!")
+        print("🔄 Please restart the application to use the new packages.\n")
+        sys.exit(0)
 
     print("✅ All dependencies are installed!\n")
 

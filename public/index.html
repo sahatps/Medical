@@ -642,31 +642,52 @@ def check_dependencies():
                 import super_gradients
             else:
                 __import__(package)
-            print(f"  ✅ \${package}")
+            print(f"  ✅ {package}")
         except ImportError:
-            print(f"  ❌ \${package} - NOT INSTALLED")
+            print(f"  ❌ {package} - NOT INSTALLED")
             missing_packages.append(package)
 
     if missing_packages:
-        print("\\n⚠️  Missing dependencies detected!")
-        print("\\nTo install missing packages, run:")
-        print(f"  pip install -r requirements-local.txt")
-        print("\\nOr install manually:")
-        for pkg in missing_packages:
-            if pkg == 'cv2':
-                print(f"  pip install opencv-python-headless")
-            elif pkg == 'flask_cors':
-                print(f"  pip install flask-cors")
-            else:
-                print(f"  pip install \${pkg}")
+        print("\n⚠️  Missing dependencies detected!")
+        print("🔧 Auto-installing missing packages...")
         print()
 
-        response = input("Continue anyway? (y/N): ").strip().lower()
-        if response != 'y':
-            print("Exiting...")
-            sys.exit(1)
+        # Auto-install missing packages
+        import subprocess
 
-    print("✅ All dependencies are installed!\\n")
+        # Map package names to pip install names
+        pip_package_map = {
+            'cv2': 'opencv-python-headless',
+            'flask_cors': 'flask-cors',
+            'super_gradients': 'super-gradients'
+        }
+
+        for pkg in missing_packages:
+            pip_name = pip_package_map.get(pkg, pkg)
+            print(f"  📥 Installing {pip_name}...")
+
+            try:
+                subprocess.check_call(
+                    [sys.executable, '-m', 'pip', 'install', pip_name, '--quiet'],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL
+                )
+                print(f"  ✅ {pip_name} installed successfully!")
+            except subprocess.CalledProcessError:
+                print(f"  ❌ Failed to install {pip_name}")
+                print(f"\n⚠️  Please install manually: pip install {pip_name}")
+                print("\nOr run: pip install -r requirements-local.txt")
+                print()
+                response = input("Continue anyway? (y/N): ").strip().lower()
+                if response != 'y':
+                    print("Exiting...")
+                    sys.exit(1)
+
+        print("\n✅ All missing dependencies have been installed!")
+        print("🔄 Please restart the application to use the new packages.\n")
+        sys.exit(0)
+
+    print("✅ All dependencies are installed!\n")
 
 def start_backend():
     """Start Flask backend server in a separate thread"""
@@ -684,7 +705,7 @@ def start_backend():
         app.run(debug=False, host='0.0.0.0', port=5000, use_reloader=False)
 
     except Exception as e:
-        print(f"❌ Error starting backend: \${e}")
+        print(f"❌ Error starting backend: {e}")
         sys.exit(1)
 
 def wait_for_backend(url='http://localhost:5000', timeout=30):
@@ -705,7 +726,7 @@ def wait_for_backend(url='http://localhost:5000', timeout=30):
             time.sleep(0.5)
 
     print(" ❌")
-    print(f"⚠️  Backend failed to start within \${timeout} seconds")
+    print(f"⚠️  Backend failed to start within {timeout} seconds")
     return False
 
 def open_browser():
@@ -714,22 +735,22 @@ def open_browser():
     html_path = Path(__file__).parent / 'public' / 'index.html'
 
     if not html_path.exists():
-        print(f"❌ Error: \${html_path} not found!")
+        print(f"❌ Error: {html_path} not found!")
         return False
 
     # Convert to absolute file URL
-    file_url = f"file://\${html_path.absolute()}"
+    file_url = f"file://{html_path.absolute()}"
 
     print(f"🌐 Opening web interface...")
-    print(f"   URL: \${file_url}")
+    print(f"   URL: {file_url}")
 
     try:
         webbrowser.open(file_url)
         print("✅ Web interface opened in your default browser!")
         return True
     except Exception as e:
-        print(f"❌ Error opening browser: \${e}")
-        print(f"\\nPlease manually open: \${html_path}")
+        print(f"❌ Error opening browser: {e}")
+        print(f"\nPlease manually open: {html_path}")
         return False
 
 def main():
@@ -775,7 +796,7 @@ def main():
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\\n\\n🛑 Shutting down...")
+        print("\n\n🛑 Shutting down...")
         print("✅ Application stopped successfully!")
         sys.exit(0)
 
@@ -799,28 +820,92 @@ Pillow==10.1.0
             start_bat: {
                 filename: 'start_app.bat',
                 content: `@echo off
-REM Tennis Pose Estimation - Windows Launcher
-REM Double-click this file to start the application
+REM Tennis Pose Estimation - Windows One-Click Launcher
+REM Double-click this file - it will install everything and start automatically!
 
 echo.
-echo =========================================
-echo Tennis Pose Estimation - Starting...
-echo =========================================
+echo ============================================================
+echo    Tennis Pose Estimation - One-Click Launcher
+echo ============================================================
+echo.
+echo This will:
+echo   1. Check Python installation
+echo   2. Install required packages (if needed)
+echo   3. Start the backend server
+echo   4. Open your browser automatically
+echo.
+echo ============================================================
 echo.
 
 REM Check if Python is installed
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Python is not installed or not in PATH
+    echo [ERROR] Python is not installed or not in PATH
     echo.
     echo Please install Python from: https://www.python.org/downloads/
+    echo Make sure to check "Add Python to PATH" during installation
     echo.
     pause
     exit /b 1
 )
 
-REM Run the launcher
+echo [OK] Python is installed
+python --version
+echo.
+
+REM Check if requirements file exists
+if not exist requirements-local.txt (
+    echo [WARNING] requirements-local.txt not found!
+    echo Creating basic requirements file...
+    echo flask>requirements-local.txt
+    echo flask-cors>>requirements-local.txt
+    echo opencv-python-headless>>requirements-local.txt
+    echo torch>>requirements-local.txt
+    echo super-gradients>>requirements-local.txt
+    echo.
+)
+
+REM Install dependencies automatically
+echo ============================================================
+echo Installing/Updating dependencies...
+echo This may take a few minutes on first run (downloading PyTorch)
+echo ============================================================
+echo.
+
+python -m pip install --upgrade pip --quiet
+python -m pip install -r requirements-local.txt --quiet
+
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Failed to install dependencies
+    echo.
+    echo Try running manually:
+    echo   pip install -r requirements-local.txt
+    echo.
+    pause
+    exit /b 1
+)
+
+echo.
+echo [OK] All dependencies installed!
+echo.
+
+REM Run the application launcher
+echo ============================================================
+echo Starting Tennis Pose Estimation Backend...
+echo ============================================================
+echo.
+
 python app_launcher.py
+
+REM If launcher exits, pause to see any error messages
+if errorlevel 1 (
+    echo.
+    echo [ERROR] Application failed to start
+    echo.
+    pause
+    exit /b 1
+)
 
 pause
 `
@@ -828,27 +913,97 @@ pause
             start_sh: {
                 filename: 'start_app.sh',
                 content: `#!/bin/bash
-# Tennis Pose Estimation - Mac/Linux Launcher
-# Run this file to start the application
+# Tennis Pose Estimation - Mac/Linux One-Click Launcher
+# Double-click (or run) this file - it will install everything and start automatically!
 
 echo ""
-echo "========================================="
-echo "Tennis Pose Estimation - Starting..."
-echo "========================================="
+echo "============================================================"
+echo "   Tennis Pose Estimation - One-Click Launcher"
+echo "============================================================"
+echo ""
+echo "This will:"
+echo "  1. Check Python installation"
+echo "  2. Install required packages (if needed)"
+echo "  3. Start the backend server"
+echo "  4. Open your browser automatically"
+echo ""
+echo "============================================================"
 echo ""
 
-# Check if Python is installed
+# Check if Python 3 is installed
 if ! command -v python3 &> /dev/null
 then
-    echo "ERROR: Python 3 is not installed"
+    echo "[ERROR] Python 3 is not installed"
     echo ""
     echo "Please install Python 3 from: https://www.python.org/downloads/"
+    echo "Or use your package manager:"
+    echo "  macOS: brew install python3"
+    echo "  Ubuntu/Debian: sudo apt install python3 python3-pip"
+    echo "  Fedora: sudo dnf install python3 python3-pip"
     echo ""
+    read -p "Press Enter to exit..."
     exit 1
 fi
 
-# Run the launcher
+echo "[OK] Python 3 is installed"
+python3 --version
+echo ""
+
+# Check if requirements file exists
+if [ ! -f "requirements-local.txt" ]; then
+    echo "[WARNING] requirements-local.txt not found!"
+    echo "Creating basic requirements file..."
+    cat > requirements-local.txt << EOF
+flask
+flask-cors
+opencv-python-headless
+torch
+super-gradients
+EOF
+    echo ""
+fi
+
+# Install dependencies automatically
+echo "============================================================"
+echo "Installing/Updating dependencies..."
+echo "This may take a few minutes on first run (downloading PyTorch)"
+echo "============================================================"
+echo ""
+
+python3 -m pip install --upgrade pip --quiet
+python3 -m pip install -r requirements-local.txt --quiet
+
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "[ERROR] Failed to install dependencies"
+    echo ""
+    echo "Try running manually:"
+    echo "  pip3 install -r requirements-local.txt"
+    echo ""
+    read -p "Press Enter to exit..."
+    exit 1
+fi
+
+echo ""
+echo "[OK] All dependencies installed!"
+echo ""
+
+# Run the application launcher
+echo "============================================================"
+echo "Starting Tennis Pose Estimation Backend..."
+echo "============================================================"
+echo ""
+
 python3 app_launcher.py
+
+# If launcher exits with error, pause
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "[ERROR] Application failed to start"
+    echo ""
+    read -p "Press Enter to exit..."
+    exit 1
+fi
 `
             },
             backend: {
