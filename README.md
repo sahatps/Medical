@@ -14,6 +14,35 @@
 
 ## 🚀 How to Use
 
+### ⚡ Quick Start (Recommended) - **One-Click Launch**
+
+**Easiest way to use both engines!**
+
+#### Windows:
+```bash
+# Double-click this file:
+start_app.bat
+
+# Or run in terminal:
+python app_launcher.py
+```
+
+#### Mac/Linux:
+```bash
+# In terminal:
+./start_app.sh
+
+# Or:
+python3 app_launcher.py
+```
+
+**What happens:**
+1. ✅ Automatically starts Flask backend (for YOLO-NAS)
+2. ✅ Opens web interface in your browser
+3. ✅ Both engines ready to use!
+
+---
+
 ### 🌐 Engine 1: MediaPipe (Browser Mode) - **No Setup Required**
 
 Perfect for quick, hassle-free processing!
@@ -34,6 +63,13 @@ Perfect for quick, hassle-free processing!
 
 For professional-grade pose estimation!
 
+#### Method A: Use One-Click Launcher (Recommended)
+```bash
+# Backend starts automatically!
+python app_launcher.py
+```
+
+#### Method B: Manual Setup
 1. **Start the Backend Server:**
    ```bash
    python local_backend.py
@@ -147,13 +183,21 @@ Output format: WebM (VP9 codec)
 Medical/
 ├── public/
 │   └── index.html          # Frontend with dual-engine support
-├── local_backend.py        # Flask backend for YOLO-NAS (optional)
+├── app_launcher.py         # 🆕 One-click launcher (starts backend + opens browser)
+├── start_app.bat           # 🆕 Windows launcher (double-click to run)
+├── start_app.sh            # 🆕 Mac/Linux launcher
+├── local_backend.py        # Flask backend for YOLO-NAS
 ├── requirements-local.txt  # Python dependencies for backend
-├── start_backend.sh/.bat   # Scripts to start backend server
+├── start_backend.sh/.bat   # Manual backend startup scripts (legacy)
 ├── vercel.json            # Vercel configuration
 ├── package.json           # Project metadata
 └── README.md             # This file
 ```
+
+**Quick Start Files:**
+- **app_launcher.py** - Main launcher (recommended)
+- **start_app.bat** - Windows one-click launcher
+- **start_app.sh** - Mac/Linux one-click launcher
 
 ## 🆚 Engine Comparison
 
