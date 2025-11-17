@@ -928,21 +928,9 @@ python3 app_launcher.py
         // Show modal with instructions to download local_backend.py
         function showBackendDownloadModal() {
             const modal = document.createElement('div');
-            modal.style.cssText = \`
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.7);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                z-index: 10000;
-                padding: 20px;
-            \`;
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; z-index: 10000; padding: 20px;';
 
-            modal.innerHTML = \`
+            modal.innerHTML = `
                 <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
                     <h2 style="margin-top: 0; color: #333;">📄 Download local_backend.py</h2>
                     <p>The <code>local_backend.py</code> file (400+ lines) is required for YOLO-NAS backend.</p>
@@ -981,7 +969,7 @@ python3 app_launcher.py
                         Close
                     </button>
                 </div>
-            \`;
+            `;
 
             document.body.appendChild(modal);
 
