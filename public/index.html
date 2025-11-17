@@ -870,7 +870,7 @@ python3 app_launcher.py
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
 
-            showAlert(\`Downloaded: \${file.filename}\`, 'success');
+            showAlert('Downloaded: ' + file.filename, 'success');
         }
 
         // Download all backend files
