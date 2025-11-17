@@ -371,6 +371,9 @@
         let isProcessing = false;
         let processedFrames = [];
         let mediaRecorder = null;
+        let videoElement = null;
+        let canvas = null;
+        let canvasCtx = null;
 
         // Initialize MediaPipe Pose
         async function initializePose() {
@@ -386,9 +389,12 @@
                 pose.setOptions({
                     modelComplexity: parseInt(document.getElementById('modelComplexity').value),
                     smoothLandmarks: document.getElementById('smoothLandmarks').value === 'true',
+                    enableSegmentation: false,
                     minDetectionConfidence: parseFloat(document.getElementById('minDetectionConfidence').value),
                     minTrackingConfidence: parseFloat(document.getElementById('minTrackingConfidence').value)
                 });
+
+                pose.onResults(onResults);
 
                 updateProgress(50, 'AI model loaded successfully!');
                 return true;
@@ -397,6 +403,32 @@
                 showAlert('Failed to load AI model: ' + error.message, 'error');
                 return false;
             }
+        }
+
+        // Handle pose detection results
+        function onResults(results) {
+            if (!canvasCtx || !canvas) return;
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+            if (results.poseLandmarks) {
+                // Draw connections (skeleton lines)
+                drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS, {
+                    color: '#00FF00',
+                    lineWidth: 4
+                });
+
+                // Draw landmarks (joints)
+                drawLandmarks(canvasCtx, results.poseLandmarks, {
+                    color: '#FF0000',
+                    lineWidth: 2,
+                    radius: 6
+                });
+            }
+
+            canvasCtx.restore();
         }
 
         // Upload area handlers
@@ -436,8 +468,18 @@
             }
 
             selectedVideo = file;
-            const videoElement = document.getElementById('originalVideo');
+            videoElement = document.getElementById('originalVideo');
+            canvas = document.getElementById('outputCanvas');
+            canvasCtx = canvas.getContext('2d');
+
             videoElement.src = URL.createObjectURL(file);
+
+            // Wait for video metadata to load
+            videoElement.onloadedmetadata = () => {
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                console.log('Video dimensions:', videoElement.videoWidth, 'x', videoElement.videoHeight);
+            };
 
             document.getElementById('videoContainer').classList.add('show');
             document.getElementById('processBtn').disabled = false;
@@ -482,36 +524,55 @@
 
         // Process video frame by frame
         async function processVideo() {
-            const videoElement = document.getElementById('originalVideo');
-            const canvas = document.getElementById('outputCanvas');
-            const ctx = canvas.getContext('2d');
-
-            // Set canvas size to match video
-            videoElement.addEventListener('loadedmetadata', () => {
+            // Ensure canvas is properly sized
+            if (canvas.width === 0 || canvas.height === 0) {
                 canvas.width = videoElement.videoWidth;
                 canvas.height = videoElement.videoHeight;
-            });
+            }
+
+            // Check if MediaRecorder supports webm
+            let mimeType = 'video/webm;codecs=vp9';
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = 'video/webm';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/mp4';
+                }
+            }
+            console.log('Using MIME type:', mimeType);
 
             // Setup MediaRecorder to capture canvas output
             const stream = canvas.captureStream(30); // 30 FPS
             mediaRecorder = new MediaRecorder(stream, {
-                mimeType: 'video/webm;codecs=vp9',
-                videoBitsPerSecond: 5000000
+                mimeType: mimeType,
+                videoBitsPerSecond: 2500000
             });
 
             mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
+                if (event.data && event.data.size > 0) {
                     processedFrames.push(event.data);
+                    console.log('Recorded chunk:', event.data.size, 'bytes');
                 }
             };
 
             mediaRecorder.onstop = () => {
-                const blob = new Blob(processedFrames, { type: 'video/webm' });
+                console.log('Recording stopped. Total chunks:', processedFrames.length);
+
+                if (processedFrames.length === 0) {
+                    showAlert('No video data recorded. Please try again.', 'error');
+                    isProcessing = false;
+                    document.getElementById('processBtn').disabled = false;
+                    return;
+                }
+
+                const blob = new Blob(processedFrames, { type: mimeType });
+                console.log('Final blob size:', blob.size, 'bytes');
+
                 const url = URL.createObjectURL(blob);
 
                 // Enable download button
                 document.getElementById('downloadBtn').style.display = 'inline-block';
                 document.getElementById('downloadBtn').setAttribute('data-url', url);
+                document.getElementById('downloadBtn').setAttribute('data-type', mimeType.includes('webm') ? 'webm' : 'mp4');
 
                 updateProgress(100, 'Processing complete!');
                 showAlert('Video processing completed! You can now download the result.', 'success');
@@ -520,59 +581,55 @@
                 document.getElementById('processBtn').disabled = false;
             };
 
-            // Setup pose results handler
-            pose.onResults((results) => {
-                ctx.save();
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+            mediaRecorder.onerror = (event) => {
+                console.error('MediaRecorder error:', event);
+                showAlert('Recording error: ' + event.error, 'error');
+            };
 
-                if (results.poseLandmarks) {
-                    // Draw pose landmarks
-                    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {
-                        color: '#00FF00',
-                        lineWidth: 4
-                    });
-                    drawLandmarks(ctx, results.poseLandmarks, {
-                        color: '#FF0000',
-                        lineWidth: 2,
-                        radius: 6
-                    });
-                }
-
-                ctx.restore();
-            });
-
-            // Start recording
-            mediaRecorder.start();
+            // Start recording with chunks every 1 second
+            mediaRecorder.start(1000);
             updateProgress(70, 'Processing video frames...');
 
             // Play video and process frames
             videoElement.currentTime = 0;
-            videoElement.play();
+            await videoElement.play();
 
             let frameCount = 0;
-            const totalFrames = Math.floor(videoElement.duration * 30); // Estimate
+            const fps = 30;
+            const frameDuration = 1000 / fps;
+            let lastFrameTime = performance.now();
 
             const processFrame = async () => {
-                if (videoElement.ended || videoElement.paused) {
-                    mediaRecorder.stop();
+                if (videoElement.paused || videoElement.ended) {
+                    console.log('Video ended or paused');
+                    setTimeout(() => {
+                        if (mediaRecorder && mediaRecorder.state === 'recording') {
+                            mediaRecorder.stop();
+                        }
+                    }, 500);
                     return;
                 }
 
-                await pose.send({ image: videoElement });
-                frameCount++;
+                const currentTime = performance.now();
+                const elapsed = currentTime - lastFrameTime;
 
-                // Update progress
-                const progress = 70 + (frameCount / totalFrames) * 25;
-                updateProgress(Math.min(progress, 95), `Processing frame ${frameCount}...`);
+                if (elapsed >= frameDuration) {
+                    // Send frame to pose detection
+                    await pose.send({ image: videoElement });
+                    frameCount++;
+
+                    // Update progress
+                    const progress = 70 + ((videoElement.currentTime / videoElement.duration) * 25);
+                    updateProgress(Math.min(progress, 95), `Processing frame ${frameCount}...`);
+
+                    lastFrameTime = currentTime - (elapsed % frameDuration);
+                }
 
                 requestAnimationFrame(processFrame);
             };
 
             videoElement.onended = () => {
-                setTimeout(() => {
-                    mediaRecorder.stop();
-                }, 500);
+                console.log('Video playback ended');
             };
 
             processFrame();
@@ -581,12 +638,16 @@
         // Download processed video
         function downloadVideo() {
             const url = document.getElementById('downloadBtn').getAttribute('data-url');
+            const type = document.getElementById('downloadBtn').getAttribute('data-type') || 'webm';
+
             if (!url) return;
 
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'pose_estimation_' + new Date().getTime() + '.webm';
+            a.download = 'pose_estimation_' + new Date().getTime() + '.' + type;
+            document.body.appendChild(a);
             a.click();
+            document.body.removeChild(a);
         }
 
         // Reset everything
@@ -599,7 +660,15 @@
             selectedVideo = null;
             processedFrames = [];
 
-            document.getElementById('originalVideo').src = '';
+            if (videoElement) {
+                videoElement.pause();
+                videoElement.src = '';
+            }
+
+            if (canvasCtx && canvas) {
+                canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+
             document.getElementById('videoContainer').classList.remove('show');
             document.getElementById('progressContainer').classList.remove('show');
             document.getElementById('processBtn').disabled = true;
